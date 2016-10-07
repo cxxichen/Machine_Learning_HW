@@ -20,7 +20,11 @@ def logistic_predict(weights, data):
         y:          :N x 1 vector of probabilities of being second class. This is the output of the classifier.
     """
     # TODO: Finish this function
-    [...]
+    N, M = data.shape
+    y = np.zeros((N, 1))
+    for i in range(N):
+        z = np.dot(data[i, :], weights[:M]) + weights[-1]
+        y[i] = sigmoid(z)
 
     return y
 
@@ -36,8 +40,17 @@ def evaluate(targets, y):
         frac_correct : (scalar) Fraction of inputs classified correctly.
     """
     # TODO: Finish this function
-    [...]
+    ce = 0.0
+    correct = 0
+    for i in range(len(targets)):
+        if (y[i][0] >= 0.5 and targets[i][0] == 0):
+            correct += 1
+        if (y[i][0] < 0.5 and targets[i][0] == 1):
+            correct += 1
+    frac_correct = float(correct)/float(len(targets))
 
+    ce += (-1.0 * np.dot(targets.T, np.log(1-y)) - 1.0 * np.dot((1 - targets.T), np.log(y)))[0][0]
+    
     return ce, frac_correct
 
 
@@ -69,7 +82,16 @@ def logistic(weights, data, targets, hyperparameters):
         f, df = logistic_pen(weights, data, targets, hyperparameters)
     else:
         # TODO: compute f and df without regularization
-        [...]
+        N, M = data.shape
+        f = 0.0
+        df = np.zeros(((M+1), 1))
+        z = [0.0] * N
+        mod_data = np.ones((N, M+1))
+        mod_data[:, :-1] = data
+        z = np.dot(mod_data, weights)
+
+        f = float(np.sum(np.log(1 + np.exp(-z))) + np.dot(np.transpose(targets), z))
+        df = np.dot(np.transpose(mod_data), targets - (1- sigmoid(z)))
 
     return f, df, y
 
@@ -96,6 +118,7 @@ def logistic_pen(weights, data, targets, hyperparameters):
     """
 
     # TODO: Finish this function
-    [...]
-    
+    # [...]
+    f = 0
+    df = 0
     return f, df

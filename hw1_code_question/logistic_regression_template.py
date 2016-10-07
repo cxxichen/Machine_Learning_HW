@@ -1,11 +1,13 @@
 from check_grad import check_grad
 from utils import *
 from logistic import *
+import matplotlib.pyplot as plt
 
 
 def run_logistic_regression(hyperparameters):
     # TODO specify training data
-    train_inputs, train_targets = [...]
+    train_inputs, train_targets = load_train()
+    # train_inputs, train_targets = load_train_small()
 
     valid_inputs, valid_targets = load_valid()
 
@@ -14,7 +16,7 @@ def run_logistic_regression(hyperparameters):
 
     # Logistic regression weights
     # TODO:Initialize to random weights here.
-    weights = [...]
+    weights = np.random.normal(0, 0.05, (M+1, 1))
 
     # Verify that your logistic function produces the right gradient.
     # diff should be very close to 0.
@@ -48,6 +50,13 @@ def run_logistic_regression(hyperparameters):
                    t+1, f / N, cross_entropy_train, frac_correct_train*100,
                    cross_entropy_valid, frac_correct_valid*100)
         logging[t] = [f / N, cross_entropy_train, frac_correct_train*100, cross_entropy_valid, frac_correct_valid*100]
+
+    # Calculate cross entropy and classfication rate of the test set
+    test_inputs, test_targets = load_test()
+    predictions_test = logistic_predict(weights, test_inputs)
+    cross_entropy_test, frac_correct_test= evaluate(test_targets, predictions_test)
+    print ("TEST CE:{:.6f} TEST FRACL{:2.2f}").format(cross_entropy_test, frac_correct_test*100)
+
     return logging
 
 def run_check_grad(hyperparameters):
@@ -75,10 +84,10 @@ def run_check_grad(hyperparameters):
 if __name__ == '__main__':
     # TODO: Set hyperparameters
     hyperparameters = {
-                    'learning_rate': [...],
-                    'weight_regularization': [...], # boolean, True for using Gaussian prior on weights
-                    'num_iterations': [...],
-                    'weight_decay': [...] # related to standard deviation of weight prior 
+                    'learning_rate': 0.1,
+                    'weight_regularization': False, # boolean, True for using Gaussian prior on weights
+                    'num_iterations': 500,
+                    'weight_decay': 0.01 # related to standard deviation of weight prior 
                     }
 
     # average over multiple runs
@@ -88,5 +97,21 @@ if __name__ == '__main__':
         logging += run_logistic_regression(hyperparameters)
     logging /= num_runs
 
+    final_CE_train, class_rate_train, final_CE_valid, class_rate_valid = logging[-1, 1:5]
+
+
+
     # TODO generate plots
-    [...]
+    start = 0
+    n_itr = []
+    for i in range(hyperparameters['num_iterations']):
+        n_itr.append(start+1)
+        start += 1
+
+    plt.plot(n_itr, logging[:, 1], 'r-', label='Cross Entropy Train')
+    plt.plot(n_itr, logging[:, 3], 'g-', label='Cross Entropy Validation')
+    plt.xlabel('Number of iterations')
+    plt.ylabel('Cross Entropy')
+    plt.legend(loc='upper right')
+    plt.title('Cross Entropy Vs. number of iterations')
+    plt.show()
