@@ -20,14 +20,14 @@ def l2_distance(a, b):
     Last Rev : Wed Oct 20 08:58:08 MET DST 1999
     Tested   : PC Matlab v5.2 and Solaris Matlab v5.3
 
-    Copyright notice: You are free to modify, extend and distribute 
-       this code granted that the author of the original code is 
+    Copyright notice: You are free to modify, extend and distribute
+       this code granted that the author of the original code is
        mentioned as the original author of the code.
 
     Fixed by JBT (3/18/00) to work for 1-dimensional vectors
-    and to warn for imaginary numbers.  Also ensures that 
+    and to warn for imaginary numbers.  Also ensures that
     output is all real, and allows the option of forcing diagonals to
-    be zero.  
+    be zero.
 
     Basic functionality ported to Python 2.7 by JCS (9/21/2013).
     """

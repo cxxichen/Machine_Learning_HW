@@ -9,15 +9,15 @@ def calClassificationRate(k, train_data, train_target, input_data, intput_target
     for i in range(len(intput_target)):
         if (intput_target[i] == outputTarget[i]):
             correctTarget += 1
-    return correctTarget / float(len(intput_target))
+    return float(correctTarget) / float(len(intput_target))
 
-def plotResult(k, valid, test):
-    plt.plot(k, valid, 'g-', label='Validation')
-    plt.plot(k, test, 'r--', label='Test')
+def plotResult(k, valid, l):
+    plt.plot(k, valid, 'ro', label=l)
     plt.xlabel('K')
     plt.ylabel('Classification Rate')
-    plt.legend(loc='lower right', numpoints = 1)
-    plt.ylim([0.8, 1])
+    plt.legend(loc='lower right', numpoints = 3)
+    plt.xlim([0,10])
+    plt.ylim([0.8, 1.1])
     plt.title('Classfication Rate Vs different value of K')
     plt.show()
 
@@ -42,4 +42,5 @@ if __name__ == '__main__':
         classificationRate_test.append(res)
         print 'K = ' + repr(i) + ': ' + repr(res)
 
-    plotResult(k, classificationRate_valid, classificationRate_test)
+    plotResult(k, classificationRate_valid, 'Validation set')
+    plotResult(k, classificationRate_test, 'Test set')

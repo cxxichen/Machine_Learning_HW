@@ -12,7 +12,7 @@ def check_grad(func, X, epsilon, *args):
 
     where X is the argument and epsilon is the small perturbation used for the finite
     differences. and the P1, P2, ... are optional additional parameters which
-    get passed to f. The function f should be of the type 
+    get passed to f. The function f should be of the type
 
     (fX, dfX) = func(X, P1, P2, ...)
 
