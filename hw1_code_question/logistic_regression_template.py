@@ -18,6 +18,8 @@ def run_logistic_regression(hyperparameters, small=False, test=False):
 
     # Logistic regression weights
     # TODO:Initialize to random weights here.
+    
+    # weights = np.random.seed(0)
     weights = np.random.normal(0, 0.05, (M+1, 1))
     # weights = np.zeros((M+1, 1))
 
