@@ -98,7 +98,8 @@ def AffineBackward(grad_y, x, w):
     # Insert your code here.
     grad_x = np.dot(grad_y, w.T)
     grad_w = np.dot(x.T, grad_y)
-    grad_b = np.dot(grad_y.T, np.ones(grad_y.shape[0]))
+    # grad_b = np.dot(grad_y.T, np.ones(grad_y.shape[0]))
+    grad_b = np.sum(grad_y, axis=0)
     return grad_x, grad_w, grad_b
     ###########################
     raise Exception('Not implemented')
@@ -124,6 +125,13 @@ def ReLUBackward(grad_y, x, y):
     """
     ###########################
     # Insert your code here.
+    # d = np.ones((grad_y.shape))
+    # for i in range(d.shape[0]):
+    #     for j in range(d.shape[1]):
+    #         if x[i,j] <= 0:
+    #             d[i,j] = 0
+    # grad_x = grad_y * d
+
     grad_x = grad_y * (x > 0)
     return grad_x
     ###########################
@@ -275,7 +283,6 @@ def Train(model, forward, backward, update, eps, momentum, num_epochs,
             # Compute error.
             error = (prediction - t) / x.shape[0]
 
-
             # Backward prop.
             backward(model, error, var)
 
@@ -411,14 +418,14 @@ def main():
     CheckGrad(model, NNForward, NNBackward, 'b1', x)
 
     # Train model.
-    stats = Train(model, NNForward, NNBackward, NNUpdate, eps,
+    model, stats = Train(model, NNForward, NNBackward, NNUpdate, eps,
                   momentum, num_epochs, batch_size)
 
     # Uncomment if you wish to save the model.
-    # Save(model_fname, model)
+    Save(model_fname, model)
 
     # Uncomment if you wish to save the training statistics.
-    # Save(stats_fname, stats)
+    Save(stats_fname, stats)
 
 if __name__ == '__main__':
     main()

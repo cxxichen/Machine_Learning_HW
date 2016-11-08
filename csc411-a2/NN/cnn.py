@@ -87,13 +87,28 @@ def InitCNN(num_channels, filter_size, num_filters_1, num_filters_2,
     b1 = np.zeros((num_filters_1))
     b2 = np.zeros((num_filters_2))
     b3 = np.zeros((num_outputs))
+
+    v_W1 = np.zeros((filter_size, filter_size,
+                               num_channels,  num_filters_1))
+    v_W2 = np.zeros((filter_size, filter_size,
+                               num_filters_1, num_filters_2))
+    v_W3 = np.zeros((num_filters_2 * 64, num_outputs))
+    v_b1 = np.zeros((num_filters_1))
+    v_b2 = np.zeros((num_filters_2))
+    v_b3 = np.zeros((num_outputs))
     model = {
         'W1': W1,
         'W2': W2,
         'W3': W3,
         'b1': b1,
         'b2': b2,
-        'b3': b3
+        'b3': b3,
+        'v_W1': v_W1,
+        'v_W2': v_W2,
+        'v_W3': v_W3,
+        'v_b1': v_b1,
+        'v_b2': v_b2,
+        'v_b3': v_b3
     }
     return model
 
@@ -153,9 +168,21 @@ def Conv2DBackward(grad_y, x, y, w):
     """
     ###########################
     # Insert your code here.
-    # grad_x = ...
-    # grad_w = ...
-    # return grad_x, grad_w
+    ws = w.shape
+    w_T = np.array(w)
+    I = ws[0]
+    J = ws[1]
+
+    for i in range(I):
+        for j in range(J):
+            w_T[i,j,:,:] = w[I-i-1, J-j-1,:,:]
+    w_T = np.transpose(w_T, [0, 1, 3, 2])
+
+    grad_x = Conv2D(grad_y, w_T)
+    grad_w = Conv2D(np.transpose(x, [3, 1, 2, 0]), np.transpose(grad_y, [1, 2, 0, 3]),
+        pad=(2 * np.floor(ws[0]/2), 2 * np.floor(ws[1]/2)))
+    grad_w = np.transpose(grad_w, [1, 2, 0, 3])
+    return grad_x, grad_w
     ###########################
     raise Exception('Not implemented')
 
@@ -238,6 +265,20 @@ def CNNUpdate(model, eps, momentum):
     # model['b1'] = ...
     # model['b2'] = ...
     # model['b3'] = ...
+    model['v_W1'] = (momentum * model['v_W1'] + eps * model['dE_dW1'])
+    model['v_W2'] = (momentum * model['v_W2'] + eps * model['dE_dW2'])
+    model['v_W3'] = (momentum * model['v_W3'] + eps * model['dE_dW3'])
+    model['v_b1'] = (momentum * model['v_b1'] + eps * model['dE_db1'])
+    model['v_b2'] = (momentum * model['v_b2'] + eps * model['dE_db2'])
+    model['v_b3'] = (momentum * model['v_b3'] + eps * model['dE_db3'])
+
+    model['W1'] = model['W1'] - model['v_W1']
+    model['W2'] = model['W2'] - model['v_W2']
+    model['W3'] = model['W3'] - model['v_W3']
+    model['b1'] = model['b1'] - model['v_b1']
+    model['b2'] = model['b2'] - model['v_b2']
+    model['b3'] = model['b3'] - model['v_b3']
+    return
     ###########################
     raise Exception('Not implemented')
 
@@ -267,7 +308,7 @@ def main():
     # Uncomment to reload trained model here.
     # model = Load(model_fname)
 
-    # Check gradient implementation.
+    # # Check gradient implementation.
     print('Checking gradients...')
     x = np.random.rand(10, 48, 48, 1) * 0.1
     CheckGrad(model, CNNForward, CNNBackward, 'W3', x)
