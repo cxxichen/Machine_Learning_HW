@@ -7,7 +7,7 @@ if sys.version_info.major == 3:
     raw_input = input
 
 
-def mogEM(x, K, iters, randConst=1, minVary=0):
+def mogEM(x, K, iters, randConst=1, minVary=0, useKMeans=False):
     """
     Fits a Mixture of K Diagonal Gaussians on x.
 
@@ -34,7 +34,10 @@ def mogEM(x, K, iters, randConst=1, minVary=0):
 
     # Question 4.3: change the initializaiton with Kmeans here
     #--------------------  Add your code here --------------------
-    mu = mn + np.random.randn(N, K) * (np.sqrt(vr) / randConst)
+    if useKMeans:
+        mu = KMeans(x, K, 10)
+    else:
+        mu = mn + np.random.randn(N, K) * (np.sqrt(vr) / randConst)
 
     #------------------- Answers ---------------------
 
@@ -136,16 +139,36 @@ def q2():
     iters = 10
     minVary = 0.01
     randConst = 1.0
+    useKMeans = True
 
     # load data
     inputs_train, inputs_valid, inputs_test, target_train, target_valid, target_test = LoadData(
         '../toronto_face.npz')
+#
 
-    # Train a MoG model with 7 components on all training data, i.e., inputs_train,
+    for i in range(len(target)):
+        if (prob_anger[i] >= prob_happy[i] and target[i] == 1) or (prob_anger[i] < prob_happy[i] and target[i] == 0):
+            error += 1    # Train a MoG model with 7 components on all training data, i.e., inputs_train,
     # with both original initialization and kmeans initialization.
     #------------------- Add your code here ---------------------
-
+    p, mu, vary, logLikelihood = mogEM(inputs_train, K, iters, randConst, minVary, useKMeans)
+    ShowMeans(mu, 1)
+    ShowMeans(vary, 2)
     #------------------- Answers ---------------------
+
+
+def cal_error(prob_anger, prob_happy, target):
+    error = 0
+    for i in range(len(target)):
+        if (prob_anger[i] >= prob_happy[i] and target[i] == 1) or (prob_anger[i] < prob_happy[i] and target[i] == 0):
+            error += 1
+    return 100 * (float(error)) / (float(len(target)))
+
+    # for i, t in enumerate(target.T):
+    #     if (prob_anger[i] >= prob_happy[i] and t == 1) or (prob_anger[i] < prob_happy[i] and t == 0):
+    #         error += 1
+    # return 100 * ((float(error)) / (float(target.size)))
+
 
 
 def q4():
@@ -178,6 +201,7 @@ def q4():
         [dataQ4['y_valid_anger'], dataQ4['y_valid_happy']])
     y_test = np.concatenate([dataQ4['y_test_anger'], dataQ4['y_test_happy']])
 
+
     # Hints: this is p(d), use it based on Bayes Theorem
     num_anger_train = x_train_anger.shape[1]
     num_happy_train = x_train_happy.shape[1]
@@ -190,15 +214,41 @@ def q4():
         # Train a MoG model with K components
         # Hints: using (x_train_anger, x_train_happy) train 2 MoGs
         #-------------------- Add your code here ------------------------------
-
+        p_anger, mu_anger, vary_anger, logLikelihood_anger = mogEM(
+            x_train_anger, K, iters, randConst, minVary, True)
+        p_happy, mu_happy, vary_happy, logLikelihood_happy = mogEM(
+            x_train_happy, K, iters, randConst, minVary, True)
         #------------------- Answers ---------------------
 
         # Compute the probability P(d|x), classify examples, and compute error rate
         # Hints: using (x_train, y_train), (x_valid, y_valid), (x_test, y_test)
         # to compute error rates, you may want to use mogLogLikelihood function
         #-------------------- Add your code here ------------------------------
+        mogProb_anger_train = mogLogLikelihood(p_anger, mu_anger, vary_anger, x_train)
+        mogProb_anger_valid = mogLogLikelihood(p_anger, mu_anger, vary_anger, x_valid)
+        mogProb_anger_test= mogLogLikelihood(p_anger, mu_anger, vary_anger, x_test)
 
+        mogProb_happy_train = mogLogLikelihood(p_happy, mu_happy, vary_happy, x_train)
+        mogProb_happy_valid = mogLogLikelihood(p_happy, mu_happy, vary_happy, x_valid)
+        mogProb_happy_test = mogLogLikelihood(p_happy, mu_happy, vary_happy, x_test)
         #------------------- Answers ---------------------
+
+        # errorTrain[t] = cal_error(mogProb_anger_train, mogProb_happy_train, y_train)
+        # errorValidation[t] = cal_error(mogProb_anger_valid, mogProb_happy_valid, y_valid)
+        # errorTest[t] = cal_error(mogProb_anger_test, mogProb_happy_test, y_test)
+
+        pred_train = mogProb_anger_train < mogProb_happy_train
+        pred_valid = mogProb_anger_valid < mogProb_happy_valid
+        pred_test = mogProb_anger_test < mogProb_happy_test
+
+        correct_train = pred_train == y_train
+        correct_valid = pred_valid == y_valid
+        correct_test = pred_test == y_test
+
+        errorTrain[t] = 1.0 - correct_train.mean()
+        errorValidation[t] = 1.0 - correct_valid.mean()
+        errorTest[t] = 1.0 - correct_test.mean()
+
 
     # Plot the error rate
     plt.figure(0)
@@ -225,6 +275,6 @@ if __name__ == '__main__':
     #-------------------------------------------------------------------------
     # Note: Question 4.4 both need to call function q4
     # you need to comment function q2 above
-    # q4()
+    q4()
 
     raw_input('Press Enter to continue.')
