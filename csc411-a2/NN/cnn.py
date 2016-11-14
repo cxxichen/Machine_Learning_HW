@@ -60,9 +60,10 @@ from __future__ import print_function
 
 from util import LoadData, Load, Save, DisplayPlot
 from conv2d import conv2d as Conv2D
-from nn import Affine, ReLU, AffineBackward, ReLUBackward, Softmax, CheckGrad, Train, Evaluate
+from nn import Affine, ReLU, AffineBackward, ReLUBackward, Softmax, CheckGrad, Train, Evaluate, q35_plot
 
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def InitCNN(num_channels, filter_size, num_filters_1, num_filters_2,
@@ -168,20 +169,16 @@ def Conv2DBackward(grad_y, x, y, w):
     """
     ###########################
     # Insert your code here.
-    ws = w.shape
-    w_T = np.array(w)
-    I = ws[0]
-    J = ws[1]
+    I = w.shape[0]
+    J = w.shape[1]
+    w_T = np.transpose(np.array(w), [0, 1, 3, 2])
 
     for i in range(I):
         for j in range(J):
-            w_T[i,j,:,:] = w[I-i-1, J-j-1,:,:]
-    w_T = np.transpose(w_T, [0, 1, 3, 2])
+            w_T[i, j, :, :] = np.transpose(w, [0, 1, 3, 2])[I-i-1, J-j-1, :, :]
 
-    grad_x = Conv2D(grad_y, w_T)
-    grad_w = Conv2D(np.transpose(x, [3, 1, 2, 0]), np.transpose(grad_y, [1, 2, 0, 3]),
-        pad=(2 * np.floor(ws[0]/2), 2 * np.floor(ws[1]/2)))
-    grad_w = np.transpose(grad_w, [1, 2, 0, 3])
+    grad_x = Conv2D(grad_y, w_T, pad=(I-1, J-1))
+    grad_w = np.transpose(Conv2D(np.transpose(x, [3, 1, 2, 0]), np.transpose(grad_y, [1, 2, 0, 3]), pad=(I-1, J-1)), [1, 2, 0, 3])
     return grad_x, grad_w
     ###########################
     raise Exception('Not implemented')
@@ -259,12 +256,6 @@ def CNNUpdate(model, eps, momentum):
     ###########################
     # Insert your code here.
     # Update the weights.
-    # model['W1'] = ...
-    # model['W2'] = ...
-    # model['W3'] = ...
-    # model['b1'] = ...
-    # model['b2'] = ...
-    # model['b3'] = ...
     model['v_W1'] = (momentum * model['v_W1'] + eps * model['dE_dW1'])
     model['v_W2'] = (momentum * model['v_W2'] + eps * model['dE_dW2'])
     model['v_W3'] = (momentum * model['v_W3'] + eps * model['dE_dW3'])
@@ -282,6 +273,13 @@ def CNNUpdate(model, eps, momentum):
     ###########################
     raise Exception('Not implemented')
 
+def ShowWeights(weight, number=0, row=1):
+    plt.figure(number)
+    plt.clf()
+    for i in xrange(weight.shape[3]):
+        plt.subplot(row, weight.shape[3]/row, i+1)
+        plt.imshow(weight[:, :, 0, i].reshape(5, 5), cmap=plt.cm.gray)
+    plt.draw()
 
 def main():
     """Trains a CNN."""
@@ -319,14 +317,18 @@ def main():
     CheckGrad(model, CNNForward, CNNBackward, 'b1', x)
 
     # Train model.
-    stats = Train(model, CNNForward, CNNBackward, CNNUpdate, eps,
+    model, stats = Train(model, CNNForward, CNNBackward, CNNUpdate, eps,
                   momentum, num_epochs, batch_size)
 
+    q35_plot(model, CNNForward)
+
     # Uncomment if you wish to save the model.
-    # Save(model_fname, model)
+    Save(model_fname, model)
 
     # Uncomment if you wish to save the training statistics.
-    # Save(stats_fname, stats)
+    Save(stats_fname, stats)
+    ShowWeights(model['W1'], 2, 4)
 
 if __name__ == '__main__':
     main()
+    raw_input('Press Enter.')

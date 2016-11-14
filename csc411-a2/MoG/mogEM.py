@@ -35,7 +35,7 @@ def mogEM(x, K, iters, randConst=1, minVary=0, useKMeans=False):
     # Question 4.3: change the initializaiton with Kmeans here
     #--------------------  Add your code here --------------------
     if useKMeans:
-        mu = KMeans(x, K, 10)
+        mu = KMeans(x, K, 5)
     else:
         mu = mn + np.random.randn(N, K) * (np.sqrt(vr) / randConst)
 
@@ -139,21 +139,20 @@ def q2():
     iters = 10
     minVary = 0.01
     randConst = 1.0
-    useKMeans = True
+    useKMeans = False
 
     # load data
     inputs_train, inputs_valid, inputs_test, target_train, target_valid, target_test = LoadData(
         '../toronto_face.npz')
-#
 
-    for i in range(len(target)):
-        if (prob_anger[i] >= prob_happy[i] and target[i] == 1) or (prob_anger[i] < prob_happy[i] and target[i] == 0):
-            error += 1    # Train a MoG model with 7 components on all training data, i.e., inputs_train,
+    # Train a MoG model with 7 components on all training data, i.e., inputs_train,
     # with both original initialization and kmeans initialization.
     #------------------- Add your code here ---------------------
-    p, mu, vary, logLikelihood = mogEM(inputs_train, K, iters, randConst, minVary, useKMeans)
+    p, mu, vary, logLikelihood = mogEM(
+        inputs_train, K, iters, randConst, minVary, useKMeans)
     ShowMeans(mu, 1)
     ShowMeans(vary, 2)
+    print 'Mixing proportion ' + repr(p)
     #------------------- Answers ---------------------
 
 
@@ -162,12 +161,7 @@ def cal_error(prob_anger, prob_happy, target):
     for i in range(len(target)):
         if (prob_anger[i] >= prob_happy[i] and target[i] == 1) or (prob_anger[i] < prob_happy[i] and target[i] == 0):
             error += 1
-    return 100 * (float(error)) / (float(len(target)))
-
-    # for i, t in enumerate(target.T):
-    #     if (prob_anger[i] >= prob_happy[i] and t == 1) or (prob_anger[i] < prob_happy[i] and t == 0):
-    #         error += 1
-    # return 100 * ((float(error)) / (float(target.size)))
+    return (float(error)) / (float(target.shape[0]))
 
 
 
@@ -216,6 +210,7 @@ def q4():
         #-------------------- Add your code here ------------------------------
         p_anger, mu_anger, vary_anger, logLikelihood_anger = mogEM(
             x_train_anger, K, iters, randConst, minVary, True)
+
         p_happy, mu_happy, vary_happy, logLikelihood_happy = mogEM(
             x_train_happy, K, iters, randConst, minVary, True)
         #------------------- Answers ---------------------
@@ -233,22 +228,16 @@ def q4():
         mogProb_happy_test = mogLogLikelihood(p_happy, mu_happy, vary_happy, x_test)
         #------------------- Answers ---------------------
 
-        # errorTrain[t] = cal_error(mogProb_anger_train, mogProb_happy_train, y_train)
-        # errorValidation[t] = cal_error(mogProb_anger_valid, mogProb_happy_valid, y_valid)
-        # errorTest[t] = cal_error(mogProb_anger_test, mogProb_happy_test, y_test)
+        errorTrain[t] = cal_error(mogProb_anger_train + log_likelihood_class[0],
+            mogProb_happy_train + log_likelihood_class[1], y_train)
+        errorValidation[t] = cal_error(mogProb_anger_valid + log_likelihood_class[0],
+            mogProb_happy_valid + log_likelihood_class[1], y_valid)
+        errorTest[t] = cal_error(mogProb_anger_test + log_likelihood_class[0],
+            mogProb_happy_test + log_likelihood_class[1], y_test)
 
-        pred_train = mogProb_anger_train < mogProb_happy_train
-        pred_valid = mogProb_anger_valid < mogProb_happy_valid
-        pred_test = mogProb_anger_test < mogProb_happy_test
-
-        correct_train = pred_train == y_train
-        correct_valid = pred_valid == y_valid
-        correct_test = pred_test == y_test
-
-        errorTrain[t] = 1.0 - correct_train.mean()
-        errorValidation[t] = 1.0 - correct_valid.mean()
-        errorTest[t] = 1.0 - correct_test.mean()
-
+        print 'Training error = %f' % errorTrain[t]
+        print 'Validation error = %f' % errorValidation[t]
+        print 'Testing error = %f' % errorTest[t]
 
     # Plot the error rate
     plt.figure(0)
@@ -270,11 +259,11 @@ if __name__ == '__main__':
     #-------------------------------------------------------------------------
     # Note: Question 4.2 and 4.3 both need to call function q2
     # you need to comment function q4 below
-    # q2()
+    q2()
 
     #-------------------------------------------------------------------------
     # Note: Question 4.4 both need to call function q4
     # you need to comment function q2 above
-    q4()
+    # q4()
 
     raw_input('Press Enter to continue.')

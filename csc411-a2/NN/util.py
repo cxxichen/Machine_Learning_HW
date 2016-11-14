@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import numpy as np
 import matplotlib.pyplot as plt
+
 plt.ion()
 
 
@@ -79,3 +80,12 @@ def DisplayPlot(train, valid, ylabel, number=0):
     plt.legend()
     plt.draw()
     plt.pause(0.0001)
+
+
+def plotExample(example, number=0, row=1):
+    plt.figure(number)
+    plt.clf()
+    for i in xrange(example.shape[1]):
+        plt.subplot(row, example.shape[1]/row, i+1)
+        plt.imshow(example[:, i].reshape(48, 48), cmap=plt.cm.gray)
+    plt.draw()

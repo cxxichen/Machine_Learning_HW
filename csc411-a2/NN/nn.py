@@ -19,9 +19,11 @@ the lines in "main()".
 from __future__ import division
 from __future__ import print_function
 
-from util import LoadData, Load, Save, DisplayPlot
+from util import LoadData, Load, Save, DisplayPlot, plotExample
 import sys
 import numpy as np
+
+import matplotlib.pyplot as plt
 
 
 def InitNN(num_inputs, num_hiddens, num_outputs):
@@ -302,6 +304,7 @@ def Train(model, forward, backward, update, eps, momentum, num_epochs,
         DisplayPlot(train_ce_list, valid_ce_list, 'Cross Entropy', number=0)
         DisplayPlot(train_acc_list, valid_acc_list, 'Accuracy', number=1)
 
+
     print()
     train_ce, train_acc = Evaluate(
         inputs_train, target_train, model, forward, batch_size=batch_size)
@@ -384,6 +387,25 @@ def CheckGrad(model, forward, backward, name, x):
                                    decimal=3)
 
 
+def ShowWeights(weight, number=0):
+    plt.figure(number)
+    plt.clf()
+    for i in xrange(weight.shape[1]):
+        plt.subplot(4, weight.shape[1]/4, i+1)
+        plt.imshow(weight[:, i].reshape(48, 48), cmap=plt.cm.gray)
+    plt.draw()
+
+def q35_plot(model, forward):
+    _, _, inputs_test, _, _, _ = LoadData('../toronto_face.npz')
+    prediction = Softmax(forward(model, inputs_test)['y'])
+    largest = np.argmax(prediction, axis=1)
+    idx = []
+    for i in range(prediction.shape[0]):
+        if prediction[i, largest[i]] < 0.5:
+            idx.append(i)
+    plotExample(np.transpose(inputs_test[idx][0:8,:]), 3, 4)
+
+
 def main():
     """Trains a NN."""
     model_fname = 'nn_model.npz'
@@ -391,7 +413,7 @@ def main():
 
     # Hyper-parameters. Modify them if needed.
     num_hiddens = [16, 32]
-    eps = 0.01
+    eps = 0.007
     momentum = 0.0
     num_epochs = 1000
     batch_size = 100
@@ -402,7 +424,6 @@ def main():
 
     # Initialize model.
     model = InitNN(num_inputs, num_hiddens, num_outputs)
-
 
     # Uncomment to reload trained model here.
     # model = Load(model_fname)
@@ -421,11 +442,15 @@ def main():
     model, stats = Train(model, NNForward, NNBackward, NNUpdate, eps,
                   momentum, num_epochs, batch_size)
 
+    q35_plot(model, NNForward)
+
     # Uncomment if you wish to save the model.
     Save(model_fname, model)
 
     # Uncomment if you wish to save the training statistics.
     Save(stats_fname, stats)
+    ShowWeights(model['W1'], 2)
 
 if __name__ == '__main__':
     main()
+    raw_input('Press Enter.')
